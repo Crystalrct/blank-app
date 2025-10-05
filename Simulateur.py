@@ -476,7 +476,10 @@ if st.button("✨ Lancer la simulation", key="btn_simulation"):
             
             # Calcul du cash-flow
             mensualites_annuelles = mensualite * 12
-            cash_flow_annuel = loyers - charges_classiques - mensualites_annuelles
+            charges_annuelles = charges_classiques + mensualites_annuelles
+            impact_fiscal_mensuel = surcout_fiscal / 12  # On lisse l'impact fiscal sur l'année
+            cash_flow_annuel = loyers - charges_annuelles - surcout_fiscal
+            cash_flow_mensuel = cash_flow_annuel / 12
 
             # Stockage pour diagrammes
             results.append({
@@ -495,7 +498,8 @@ if st.button("✨ Lancer la simulation", key="btn_simulation"):
                         <p><b>Impôt total + PS :</b> {impot_total_avec_prelev:.2f} €</p>
                         <p><b>Surcoût fiscal induit par l'investissement :</b> {surcout_fiscal:.2f} €</p>
                         <p><b>Rendement net-net :</b> {rendement_net:.2f} % ({revenu_net_apres_impot:.2f} €/an)</p>
-                        <p><b>Cash-flow :</b> {cash_flow_annuel:.2f} €/an ({cash_flow_annuel/12:.2f} €/mois)</p>
+                        <p><b>Cash-flow :</b> {cash_flow_annuel:.2f} €/an ({cash_flow_mensuel:.2f} €/mois)</p>
+                        <p><b>Impact fiscal mensuel :</b> {impact_fiscal_mensuel:.2f} €/mois</p>
                     </div>
                 """, unsafe_allow_html=True)
                 
