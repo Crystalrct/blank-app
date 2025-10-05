@@ -498,8 +498,7 @@ if st.button("✨ Lancer la simulation", key="btn_simulation"):
                         <p><b>Impôt total + PS :</b> {impot_total_avec_prelev:.2f} €</p>
                         <p><b>Surcoût fiscal induit par l'investissement :</b> {surcout_fiscal:.2f} €</p>
                         <p><b>Rendement net-net :</b> {rendement_net:.2f} % ({revenu_net_apres_impot:.2f} €/an)</p>
-                        <p><b>Cash-flow :</b> {cash_flow_annuel:.2f} €/an ({cash_flow_mensuel:.2f} €/mois)</p>
-                        <p><b>Impact fiscal mensuel :</b> {impact_fiscal_mensuel:.2f} €/mois</p>
+                        <p><b>Cash-flow (après prise en compte des impôts) :</b> {cash_flow_annuel:.2f} €/an ({cash_flow_mensuel:.2f} €/mois)</p>
                     </div>
                 """, unsafe_allow_html=True)
                 
