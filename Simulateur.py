@@ -228,7 +228,8 @@ def calcul_revenu_foncier(loyers, charges_classiques, interets_emprunt, assuranc
 # --- Interface ---
 st.title("🏠 Simulateur fiscal immobilier et rendement")
 
-st.info("ℹ️ Ce simulateur calcule la fiscalité de la **première année** d'investissement. Les intérêts d'emprunt diminuent progressivement les années suivantes.")
+st.info("""ℹ️ Ce simulateur calcule la fiscalité de la **première année** d'investissement. Les intérêts d'emprunt diminuent progressivement les années suivantes.
+""")
 
 RFR = st.number_input("Revenu Fiscal de Référence (RFR)", value=50000)
 st.caption("💡 Montant indiqué sur votre avis d'imposition. Il s'agit du revenu net imposable après abattements et déductions.")
@@ -244,7 +245,12 @@ type_bien = st.selectbox("Type de bien immobilier", ["Appartement", "Maison indi
 st.caption("💡 Appartement : terrain négligeable. Maison : terrain à déduire (non amortissable).")
 
 prix_bien = st.number_input("Prix d'achat du bien (€)", value=200000)
-st.caption("💡 Prix d'acquisition hors frais de notaire (environ 7-8% en plus pour l'ancien, 2-3% pour le neuf).")
+st.caption("💡 Prix d'acquisition hors frais de notaire et agence")
+
+type_achat = st.selectbox("Type d'achat", ["Ancien", "Neuf"])
+taux_notaire = 0.08 if type_achat == "Ancien" else 0.03
+frais_notaire = st.number_input("Frais de notaire (€)", value=int(prix_bien * taux_notaire))
+st.caption(f"💡 Environ {taux_notaire*100:.0f}% du prix d'achat pour un bien {type_achat.lower()}")
 
 valeur_terrain = 0
 valeur_amortissable = prix_bien
@@ -445,6 +451,7 @@ if st.button("✨ Lancer la simulation", key="btn_simulation"):
                     """, unsafe_allow_html=True)
                 continue
 
+            # Calcul de l'impact fiscal
             revenu_total = RFR - res["deficit_global"] + res["revenu_imposable"]
             total_impot, details = impot_progressif(revenu_total, parts)
             
@@ -460,11 +467,16 @@ if st.button("✨ Lancer la simulation", key="btn_simulation"):
             impot_total_avec_prelev = total_impot + prelev_sociaux
             surcout_fiscal = impot_total_avec_prelev - impots_base
             
-            # Calcul du revenu net et du rendement
+            # Calcul du rendement net-net
+            cout_total_acquisition = prix_bien + frais_notaire
             charges_totales = charges_classiques + interets_emprunt + assurance_emprunteur
             revenu_net_apres_charges = loyers - charges_totales
             revenu_net_apres_impot = revenu_net_apres_charges - surcout_fiscal
-            rendement_net = (revenu_net_apres_impot / prix_bien) * 100 if prix_bien else 0
+            rendement_net = (revenu_net_apres_impot / cout_total_acquisition) * 100 if cout_total_acquisition else 0
+            
+            # Calcul du cash-flow
+            mensualites_annuelles = mensualite * 12
+            cash_flow_annuel = loyers - charges_classiques - mensualites_annuelles
 
             # Stockage pour diagrammes
             results.append({
@@ -482,9 +494,12 @@ if st.button("✨ Lancer la simulation", key="btn_simulation"):
                         <p><b>Revenu locatif imposable :</b> {res['revenu_imposable']:.2f} €</p>
                         <p><b>Impôt total + PS :</b> {impot_total_avec_prelev:.2f} €</p>
                         <p><b>Surcoût fiscal induit par l'investissement :</b> {surcout_fiscal:.2f} €</p>
-                        <p><b>Rendement net après impôts :</b> {rendement_net:.2f} % ({revenu_net_apres_impot:.2f} €)</p>
+                        <p><b>Rendement net-net :</b> {rendement_net:.2f} % ({revenu_net_apres_impot:.2f} €/an)</p>
+                        <p><b>Cash-flow :</b> {cash_flow_annuel:.2f} €/an ({cash_flow_annuel/12:.2f} €/mois)</p>
                     </div>
                 """, unsafe_allow_html=True)
+                
+
 
                 with st.expander("Voir le détail des calculs"):
                     st.write(f"- Revenu locatif brut : {res['revenu_brut']:.2f} €")
