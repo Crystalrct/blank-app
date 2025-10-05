@@ -321,7 +321,7 @@ results = []
 def generate_pdf(df, RFR, parts, loyers, type_bien, prix_bien, valeur_terrain=0):
     # Créer le PDF en mémoire
     pdf_buffer = io.BytesIO()
-    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, leftMargin=40, rightMargin=40, topMargin=40, bottomMargin=40)
     story = []
     
     # Styles
@@ -330,75 +330,167 @@ def generate_pdf(df, RFR, parts, loyers, type_bien, prix_bien, valeur_terrain=0)
         'CustomTitle',
         parent=styles['Heading1'],
         fontSize=24,
-        spaceAfter=30
+        spaceAfter=30,
+        alignment=1  # Center alignment
     )
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
+        fontSize=16,
+        spaceAfter=15,
+        textColor=colors.HexColor('#0b3d2e'),
+        borderPadding=10,
+        borderWidth=1,
+        borderColor=colors.HexColor('#d4af37'),
+        borderRadius=5
+    )
+    subheading_style = ParagraphStyle(
+        'CustomSubheading',
+        parent=styles['Heading3'],
         fontSize=14,
-        spaceAfter=10
+        spaceAfter=10,
+        textColor=colors.HexColor('#1f6f4a')
+    )
+    body_style = ParagraphStyle(
+        'CustomBody',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=8,
+        leading=16
+    )
+    note_style = ParagraphStyle(
+        'Note',
+        parent=styles['Italic'],
+        fontSize=9,
+        textColor=colors.grey
     )
     
-    # Titre
-    story.append(Paragraph("Rapport de simulation fiscale immobilière", title_style))
-    story.append(Paragraph(f"Généré le {datetime.now().strftime('%d/%m/%Y')}", styles["Normal"]))
-    story.append(Spacer(1, 20))
+    # En-tête
+    story.append(Paragraph("Dossier d'Investissement Immobilier", title_style))
+    story.append(Paragraph(f"Analyse fiscale et financière générée le {datetime.now().strftime('%d/%m/%Y')}", 
+                         note_style))
+    story.append(Spacer(1, 30))
     
-    # Paramètres de la simulation
-    story.append(Paragraph("Paramètres de la simulation", heading_style))
-    params_data = [
+    # Résumé exécutif
+    story.append(Paragraph("Résumé de l'Investissement", heading_style))
+    exec_summary = f"""
+    Ce document présente une analyse détaillée d'un projet d'investissement immobilier 
+    {type_bien.lower()} pour un montant de {prix_bien:,.0f} €. La simulation inclut une étude 
+    fiscale complète et une analyse de rentabilité selon différents régimes fiscaux.
+    """
+    story.append(Paragraph(exec_summary, body_style))
+    story.append(Spacer(1, 20))
+
+    # Profil de l'investisseur
+    story.append(Paragraph("Profil de l'Investisseur", heading_style))
+    # Calcul de la tranche marginale d'imposition
+    revenu_par_part = RFR/parts
+    tmi = 0
+    for bas, haut, taux in bareme:
+        if revenu_par_part >= bas:
+            tmi = taux
+    investor_data = [
         ["Revenu Fiscal de Référence", f"{RFR:,.2f} €"],
         ["Nombre de parts fiscales", f"{parts}"],
-        ["Revenus locatifs annuels", f"{loyers:,.2f} €"],
+        ["Tranche marginale d'imposition", f"{tmi*100:.0f}%"]
+    ]
+    t = Table(investor_data, colWidths=[4*inch, 2.5*inch])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f5f2e7')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#0b3d2e')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 8)
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 20))
+
+    # Caractéristiques du bien
+    story.append(Paragraph("Caractéristiques de l'Investissement", heading_style))
+    property_data = [
         ["Type de bien", type_bien],
-        ["Prix d'achat", f"{prix_bien:,.2f} €"],
+        ["Prix d'acquisition", f"{prix_bien:,.2f} €"],
+        ["Revenus locatifs annuels", f"{loyers:,.2f} €"],
+        ["Rentabilité locative brute", f"{(loyers/prix_bien)*100:.2f}%"]
     ]
     if type_bien == "Maison individuelle":
-        params_data.append(["Valeur du terrain", f"{valeur_terrain:,.2f} €"])
-        
-    t = Table(params_data, colWidths=[4*inch, 2*inch])
+        property_data.extend([
+            ["Valeur du terrain", f"{valeur_terrain:,.2f} €"],
+            ["Valeur du bâti", f"{prix_bien-valeur_terrain:,.2f} €"]
+        ])
+    t = Table(property_data, colWidths=[4*inch, 2.5*inch])
     t.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f5f2e7')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#0b3d2e')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 12),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 8)
     ]))
     story.append(t)
     story.append(Spacer(1, 20))
     
-    # Résultats par régime
-    story.append(Paragraph("Résultats par régime", heading_style))
-    results_data = [["Régime", "Surcoût fiscal induit", "Rendement net", "Revenu net"]]
+    # Analyse des différents régimes
+    story.append(Paragraph("Analyse Comparative des Régimes Fiscaux", heading_style))
+    results_data = [["Régime", "Surcoût fiscal", "Rendement net", "Revenu net annuel", "Cash-flow mensuel"]]
     for _, row in df.iterrows():
         results_data.append([
             row["Type"],
-            f"{row['Surcoût fiscal (€)']:,.2f} €",
+            f"{row['Surcoût fiscal (€)']:,.0f} €",
             f"{row['Rendement net (%)']:.2f}%",
-            f"{row['Revenu net (€)']:,.2f} €"
+            f"{row['Revenu net (€)']:,.0f} €",
+            f"{row['Revenu net (€)']/12:,.0f} €"
         ])
-        
-    t = Table(results_data, colWidths=[2.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+    t = Table(results_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
     t.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0b3d2e')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 10),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f2e7')),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#0b3d2e'))
     ]))
     story.append(t)
+    
+    # Recommandations
+    story.append(Spacer(1, 20))
+    story.append(Paragraph("Points Clés pour le Financement", heading_style))
+    key_points = [
+        f"• <b>Prix d'acquisition :</b> {prix_bien:,.0f} € (hors frais de notaire)",
+        f"• <b>Revenus locatifs annuels :</b> {loyers:,.0f} €",
+        f"• <b>Rentabilité locative brute :</b> {(loyers/prix_bien)*100:.2f}%",
+        "• <b>Points forts :</b>",
+        f"  - Revenus locatifs réguliers de {loyers/12:,.0f} € par mois",
+        f"  - Plusieurs options de régimes fiscaux disponibles",
+        "• <b>Points d'attention :</b>",
+        "  - Prévoir une réserve pour les charges et travaux",
+        "  - Anticiper la fiscalité dans le plan de financement"
+    ]
+    for point in key_points:
+        story.append(Paragraph(point, body_style))
+        
+    # Note de conclusion
+    story.append(Spacer(1, 20))
+    conclusion = """
+    <i>Note : Cette simulation constitue une aide à la décision et doit être complétée par une analyse 
+    personnalisée avec un professionnel (expert-comptable, avocat fiscaliste) pour choisir 
+    le régime fiscal le plus adapté à votre situation.</i>
+    """
+    story.append(Paragraph(conclusion, note_style))
+    
+    # Pied de page
+    footer = f"""
+    Document généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')}
+    Simulation réalisée avec le Simulateur fiscal immobilier et rendement
+    """
+    story.append(Spacer(1, 30))
+    story.append(Paragraph(footer, note_style))
     
     # Générer le PDF
     doc.build(story)
