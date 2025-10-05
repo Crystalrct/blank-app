@@ -518,22 +518,26 @@ if st.button("✨ Lancer la simulation", key="btn_simulation"):
     # --- Diagramme 1 : Surcoût fiscal ---
     df = pd.DataFrame(results)
     st.markdown("## 💰 Surcoût fiscal induit par l'investissement immobilier")
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10, 6))
     bars = ax.bar(df["Type"], df["Surcoût fiscal (€)"], color=["#1f6f4a", "#3c9b70", "#b69329", "#d4af37"])
     ax.set_ylabel("Montant (€)")
     ax.set_title("Surcoût fiscal induit par l'investissement selon le régime")
+    plt.xticks(rotation=45, ha='right')
     ax.bar_label(bars, fmt="%.0f €", label_type="center", color="white", fontweight="bold", fontsize=10)
-    st.pyplot(fig)
+    plt.tight_layout()
+    st.pyplot(fig, use_container_width=True)
 
     # --- Diagramme 2 : Rendement net après impôts ---
     st.markdown("## 📊 Rendement net après impôts")
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10, 6))
     bars = ax.bar(df["Type"], df["Rendement net (%)"], color=["#1f6f4a", "#3c9b70", "#b69329", "#d4af37"])
     ax.set_ylabel("Rendement net (%)")
     ax.set_title("Rendement net après impôts (%)")
+    plt.xticks(rotation=45, ha='right')
     ax.bar_label(bars, labels=[f"{v:.0f} €" for v in df["Revenu net (€)"]], label_type="center",
                  color="white", fontweight="bold", fontsize=10)
-    st.pyplot(fig)
+    plt.tight_layout()
+    st.pyplot(fig, use_container_width=True)
 
     # Sauvegarder les résultats dans la session state
     st.session_state.simulation_results = {
