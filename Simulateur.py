@@ -466,7 +466,16 @@ if st.button("✨ Lancer la simulation", key="btn_simulation"):
             # Calcul de l'impact fiscal
             revenu_total = RFR - res["deficit_global"] + res["revenu_imposable"]
             total_impot, details = impot_progressif(revenu_total, parts)
-            prelev_sociaux = res["revenu_imposable"] * 0.172
+            
+            # Calcul des prélèvements sociaux
+            if type_loc == "Meublée" and regime == "Reel":
+                # Pour le LMNP au réel, les PS sont calculés sur le revenu avant amortissement
+                assiette_ps = res["revenu_avant_amortissement"]
+            else:
+                # Pour les autres cas, sur le revenu imposable
+                assiette_ps = res["revenu_imposable"]
+            
+            prelev_sociaux = max(0, assiette_ps) * 0.172  # On applique les PS uniquement sur les revenus positifs
             impot_total_avec_prelev = total_impot + prelev_sociaux
             surcout_fiscal = impot_total_avec_prelev - impots_base
             
